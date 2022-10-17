@@ -1,0 +1,3 @@
+include:
+  - 'https://gitlab.com/awesome-project/raw/main/.before-script-template.yml'
+  - '/templates/.after-script-template.yml'

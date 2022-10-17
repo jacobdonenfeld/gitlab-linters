@@ -1,0 +1,6 @@
+
+
+nested-code:
+  stage: deploy
+  script:
+    - echo "hi"

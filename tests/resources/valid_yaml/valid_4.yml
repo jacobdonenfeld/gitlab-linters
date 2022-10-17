@@ -1,0 +1,16 @@
+include: 'https://company.com/autodevops-template.yml'
+
+image: alpine:latest
+
+variables:
+  POSTGRES_USER: root
+  POSTGRES_PASSWORD: secure_password
+
+stages:
+  - build
+  - test
+  - production
+
+production:
+  environment:
+    url: https://domain.com

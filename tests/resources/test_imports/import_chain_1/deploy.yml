@@ -1,0 +1,8 @@
+include:
+  - 'nested.yml'
+
+deploy-code:
+  stage: deploy
+  script:
+    - echo "hello"
+    - exit 0

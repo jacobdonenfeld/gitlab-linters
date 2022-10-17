@@ -1,0 +1,21 @@
+include:
+  - 'deploy.yml'
+  - template: Android-Fastlane.gitlab-ci.yml
+  - local: test.yml
+    rules:
+      - exists: test2.yml
+      - if: $CI_COMMIT_BRANCH == "main"
+  - local: builds.yml
+    rules:
+      - exists:
+          - builds.yml
+
+stages:
+  - build
+  - test
+  - deploy
+
+test:
+  stage: test
+  script:
+    - echo "tee"

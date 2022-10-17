@@ -1,0 +1,5 @@
+# From https://gitlab.com/splattael/gitlab-ci-yml
+image: ruby:2.4-alpine
+
+test:
+  script: ./verify_templates.rb

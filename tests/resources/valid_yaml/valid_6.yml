@@ -1,0 +1,17 @@
+builder:
+  stage: build
+  script:
+    - |
+      data=""
+      jq -c '.[]' .gitlab/config.json | while read i; do
+        DOW=$(date +%a)
+        RUN=$(echo $i | jq -c --arg DOW $DOW -r '.frequency | any(. == $DOW)')
+        if [[ $RUN = true ]];
+        then
+          JSONDATA="$ACCOUNTDATA, '$i'"
+          JSONDATA="$(echo JSONDATA | sed 's/^, \(.*\)/\1/')"
+          export JSONDATA=JSONDATA
+          envsubst '${JSONDATA}, ${VARTWO}' < .gitlab/job-template.yml > compiled-job.yml
+        fi
+      done
+  artifacts:

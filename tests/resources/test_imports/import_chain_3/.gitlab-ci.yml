@@ -1,0 +1,12 @@
+include:
+  - local: builds.yml
+
+stages:
+  - build
+  - test
+  - deploy
+
+test:
+  stage: test
+  script:
+    - echo "tee"

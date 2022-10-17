@@ -1,0 +1,4 @@
+lint:
+  stage: test
+  script:
+    - bundle exec rubocop

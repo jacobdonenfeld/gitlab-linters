@@ -1,0 +1,4 @@
+PyYAML
+python-gitlab
+requests
+GitPython

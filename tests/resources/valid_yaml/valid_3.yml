@@ -1,0 +1,15 @@
+variables:
+  POSTGRES_USER: user
+  POSTGRES_PASSWORD: testing_password
+  POSTGRES_DB: $CI_ENVIRONMENT_SLUG
+
+production:
+  stage: production
+  script:
+    - install_dependencies
+    - deploy
+  environment:
+    name: production
+    url: https://$CI_PROJECT_PATH_SLUG.$KUBE_INGRESS_BASE_DOMAIN
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

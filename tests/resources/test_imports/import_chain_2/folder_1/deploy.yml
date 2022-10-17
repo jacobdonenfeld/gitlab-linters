@@ -1,0 +1,10 @@
+include:
+  - 'folder_1/nested.yml'
+  - "http://testwebsite.com"
+
+deployment:
+  stage: deploy
+  script:
+    - echo "hello"
+    - if [[ -v $HI]]; then echo "okay"; fi
+    - exit 0

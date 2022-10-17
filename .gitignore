@@ -1,0 +1,12 @@
+development-script.py
+testcurl.sh
+*tmp*
+.pytest_cache
+.coverage
+.idea
+*/__pycache__
+pytestdebug.log
+__pycache__
+build
+*.egg-info
+build/*

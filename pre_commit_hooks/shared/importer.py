@@ -1,0 +1,264 @@
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+import yaml
+
+# reduce(lambda xy: xy[0][xy[1]], thing)
+from lenses import lens
+
+
+class Loader(yaml.SafeLoader):  # pylint: disable=too-many-ancestors
+    pass
+
+
+class Dumper(yaml.SafeDumper):
+    pass
+
+
+def recursive_lookup(lookup_key, dictionary):
+    if lookup_key in dictionary:
+        return dictionary[lookup_key]
+    for v in dictionary.values():
+        if isinstance(v, dict):
+            recurse = recursive_lookup(lookup_key, v)
+            if recurse is not None:
+                return recurse
+    return None
+
+
+@dataclass
+class Reference:
+    data: list
+
+
+def parse_out_references(
+    previousYAML: list, currentYAML: dict, currentDictionary: dict
+):
+    queue = [lens]  # Initialize a queue, this will be the path through the dict
+    while len(queue) > 0:  # Creating loop to visit each node
+        m = queue.pop(0)  # lens element
+        element = m.get()(currentYAML)  # Lens value
+        if isinstance(element, dict):
+            next_keys = element.keys()
+            for key in next_keys:
+                # focus into the next element
+                queue.append(m[key])
+        if isinstance(element, list):
+            # Can turn this into a separate func to unit test
+            replace_data = []
+            snapshotted_yaml = lens.get()(currentYAML)
+            for list_element in range(len(element)):
+                if isinstance(element[list_element], Reference):
+                    replace, currentDictionary = find_reference(
+                        element[list_element],
+                        previousYAML,
+                        snapshotted_yaml,
+                        currentDictionary,
+                    )
+                    replace_data.append((list_element, replace))
+                    # replace the reference object with the value to sub
+            new_data = []
+            index = 0
+            for replacement in replace_data:
+                new_data = new_data + element[index : replacement[0]] + replacement[1]
+                index = replacement[0] + 1
+            new_data = new_data + element[index:]
+
+            currentYAML = m.set(new_data)(currentYAML)
+
+            # There may be more elements in the list now
+            list_elements_after_sub = m.get()(currentYAML)
+            for i in range(len(list_elements_after_sub)):
+                # focus into the list in case anything is nested inside
+                queue.append(m[list_element])
+        if isinstance(element, str):
+            continue
+        if isinstance(element, Reference):
+            # May not be hitting this path, as we don't wanna replace with a list one too deep.
+            # Handled better when going through the list.
+            # One last case to check would be to be if a value within a dict is reference
+            # then inline sub with list
+
+            replace, currentDictionary = find_reference(
+                element, previousYAML, lens.get()(currentYAML), currentDictionary
+            )
+            # replace the reference object with the value to sub
+            # Nested 1 too far in. Want to add it to previous list
+            currentYAML = m.set(replace)(currentYAML)
+    return lens.get()(currentYAML), currentDictionary
+
+
+def find_reference(
+    reference: Reference,
+    previousYAMLs: list,
+    currentYAML: dict,
+    currentDictionary: dict,
+):
+    if str(reference.data) in currentDictionary:
+        return currentDictionary[str(reference.data)], currentDictionary
+    lookup = recursive_lookup(reference.data[0], currentYAML)
+    if lookup:
+        # Look up the key in the job found
+        wanted = recursive_lookup(reference.data[1], lookup)
+        currentDictionary[str(reference.data)] = wanted
+        return wanted, currentDictionary
+    else:
+        for previousYaml in previousYAMLs:
+            lookup = recursive_lookup(reference.data[0], previousYaml)
+            if lookup:
+                # Look up the key in the job found
+                wanted = recursive_lookup(reference.data[1], lookup)
+                currentDictionary[str(reference.data)] = wanted
+                return wanted, currentDictionary
+    return None
+
+
+def constructor_reference(loader, node) -> Reference:
+    return Reference(loader.construct_sequence(node))
+
+
+Loader.add_constructor("!reference", constructor_reference)
+
+
+def check_if_importable(file_path_str: str) -> bool:
+    if "http" in file_path_str:
+        return False
+    if file_path_str[-5:] != ".yaml" and file_path_str[-4:] != ".yml":
+        print(f"Warning: Tried to import a non YAML file: {file_path_str}")
+        return False
+    if "/templates/" in file_path_str:
+        return False
+    return True
+
+
+def ImportFromRootFile(root_file: str) -> (list, bool):
+    filesToImport = []
+    import_queue = [root_file]
+    ci_yaml = []
+    referenceDict = {}
+    ok = True
+    while len(import_queue) > 0:
+        yaml_to_import = {}
+        filename_to_import = import_queue.pop(0)
+        try:
+            with open(filename_to_import) as stream:
+                # TODO: parse in safety arg
+                yaml_to_import = yaml.load(stream, Loader=Loader)
+                stream.close()
+        except Exception as ex:
+            print(f"Error: could not import file {filesToImport}")
+            print(ex)
+            ok = False
+
+        yaml_to_import, referenceDict = parse_out_references(
+            [x[0] for x in ci_yaml], yaml_to_import, referenceDict
+        )
+
+        ci_yaml.append((yaml_to_import, filename_to_import))
+        current_import_path = str(os.path.dirname(filename_to_import))
+
+        new_imports = ImportFromYAML(yaml_to_import)
+        for importing in new_imports:
+            if os.path.exists(importing):
+                import_queue.append(importing)
+            elif os.path.exists(current_import_path + os.sep + importing):
+                import_queue.append(current_import_path + os.sep + importing)
+            else:
+                ok = False
+                print(f"Could not find import for file: {importing}")
+    return ci_yaml, ok
+
+
+def ImportFromYAML(yaml_data: dict) -> list:
+    to_import = []
+    if "include" in yaml_data:
+        if isinstance(yaml_data["include"], list):
+            # import_spec = [[]] + rootYAML["include"]
+
+            # to_import = reduce(parseImportElement, import_spec)
+            for spec in yaml_data["include"]:
+                # call parse on each element in the list
+                to_import = parse_import_element(to_import, spec)
+        elif isinstance(yaml_data["include"], str):
+            if check_if_importable(yaml_data["include"]):
+                to_import.append(yaml_data["include"])
+    return to_import
+
+
+#
+# def parseReferences(previousYAML, currentYAML):
+#
+#
+# def findReference(YAMLList, currentYAML, job, element):
+#     for YAMLFile in YAMLList:
+#         for key, value in YAMLFile.items():
+#
+#         for
+#
+# def recursive_lookup(k, d):
+#     if k in d: return d[k]
+#     for v in d.values():
+#         if isinstance(v, dict):
+#             a = recursive_lookup(k, v)
+#             if a is not None: return a
+#     return None
+#
+
+
+def parse_import_element(existing_imports: list, element) -> list:
+    if isinstance(element, str) and check_if_importable(element):
+        existing_imports.append(element)
+    elif isinstance(element, list):
+        for importable in element:
+            if check_if_importable(importable):
+                existing_imports.append(importable)
+    elif isinstance(element, dict):
+        # Importing from a template
+        if "template" in element:
+            # TODO: curl and parse from
+            #  https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates
+            return existing_imports
+        if "remote" in element:
+            # TODO: curl and parse from
+            #  https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates
+            return existing_imports
+        # rules in importing the files in this dict
+        if "rules" in element:
+            # If the rules isn't a list, I haven't seen this before, so throw an error and lmk
+            if not isinstance(element["rules"], list):
+                print("unhandeled. code: 10299")
+                exit(1)
+            passed_rules = True
+            for rule in element["rules"]:
+                if isinstance(rule, dict):
+                    for rule_type, condition in rule.items():
+                        rule_type = rule_type.lower()
+                        # If it's an if statement, ignore. Evaluated at runtime
+                        if rule_type == "if":
+                            continue
+                        # Unsure whether to check this at compile time.
+                        if rule_type == "exists":
+                            # If checking if a str exists and it does not, pass on the associated import
+                            if isinstance(condition, str) and not check_if_importable(
+                                condition
+                            ):
+                                passed_rules = False
+                            # If the exists condition has multiple conditions,
+                            # IE, checking multiple files
+                            elif isinstance(condition, list):
+                                for element2 in condition:
+                                    if isinstance(
+                                        element2, str
+                                    ) and not check_if_importable(element2):
+                                        passed_rules = False
+                                    elif not isinstance(element2, str):
+                                        print("Haven't seen this happen. code: 1838")
+                                        exit(1)
+            if not passed_rules:
+                return existing_imports
+        if "local" in element and check_if_importable(element["local"]):
+            existing_imports.append(element["local"])
+
+    return existing_imports

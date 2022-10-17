@@ -1,0 +1,9 @@
+include:
+  - local: builds.yml
+    rules:
+      - exists:
+          - file.md
+
+test:
+  stage: test
+  script: exit 0
