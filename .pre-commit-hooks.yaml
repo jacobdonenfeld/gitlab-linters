@@ -3,6 +3,7 @@
     entry: gitlab-ci-shellcheck
     pass_filenames: false
     language: python
+    types: [yaml]
     files: '(\.yml|\.yaml)$'
     description: Validate gitlab ci yaml scripts via shellcheck and AST parsing
 #-   id: gitlab-ci-linter
@@ -10,5 +11,6 @@
 #    entry: gitlab-ci-lint
 #    language: python
 #    files: '(\.yml|\.yaml)$'
+#    types: [yaml]
 #    description: API call to gitlab's linter to validate .yml config
 

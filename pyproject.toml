@@ -1,3 +1,28 @@
+#[build-system]
+#requires = ["setuptools>=61.0", "setuptools-scm"]
+#build-backend = "setuptools.build_meta"
+
+#[project]
+#name = "gitlab-precommit"
+#description = "Gitlab precommit tools"
+#readme = "README.md"
+#requires-python = ">=3.7"
+#keywords = ["gitlab", "shellcheck"]
+#classifiers = [
+#    "Environment :: Console",
+#    "Development Status :: 4 - Beta",
+#    "Programming Language :: Python :: 3",
+#    "License :: OSI Approved :: MIT License",
+#]
+##dependencies = [
+##    "requests",
+##    'importlib-metadata; python_version<"3.8"',
+##]
+#dynamic = ["version"]
+#
+#[project.urls]
+#"Homepage" = "https://github.com/jacobdonenfeld/gitlab-lint-hooks"
+
 [tool.black]
 py36 = false
 include = '\.pyi?$'
