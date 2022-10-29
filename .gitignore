@@ -8,5 +8,7 @@ testcurl.sh
 pytestdebug.log
 __pycache__
 build
-*.egg-info
 build/*
+*.egg-info
+dist
+dist/*
