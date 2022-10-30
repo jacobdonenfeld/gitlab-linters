@@ -9,7 +9,7 @@ from pathlib import Path
 
 from git import Repo
 
-from .shared.importer import ImportFromRootFile
+from .shared.importer import import_from_root_file
 
 # Can move this to an arg
 DEBUG = False
@@ -201,7 +201,7 @@ def call_ci_script_check(args=None):
             print("\n")
         return script_valid
 
-    ci_yaml, completed_successfully = ImportFromRootFile(file)
+    ci_yaml, completed_successfully = import_from_root_file(file)
     if not completed_successfully:
         fail = True
 

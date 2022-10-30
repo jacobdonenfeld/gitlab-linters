@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 
 import yaml
@@ -34,12 +35,12 @@ class Reference:
 
 
 def parse_out_references(
-    previousYAML: list, currentYAML: dict, currentDictionary: dict
+    previous_yaml: list, current_yaml: dict, current_dictionary: dict
 ):
     queue = [lens]  # Initialize a queue, this will be the path through the dict
     while len(queue) > 0:  # Creating loop to visit each node
         m = queue.pop(0)  # lens element
-        element = m.get()(currentYAML)  # Lens value
+        element = m.get()(current_yaml)  # Lens value
         if isinstance(element, dict):
             next_keys = element.keys()
             for key in next_keys:
@@ -48,14 +49,14 @@ def parse_out_references(
         if isinstance(element, list):
             # Can turn this into a separate func to unit test
             replace_data = []
-            snapshotted_yaml = lens.get()(currentYAML)
+            snapshotted_yaml = lens.get()(current_yaml)
             for list_element in range(len(element)):
                 if isinstance(element[list_element], Reference):
-                    replace, currentDictionary = find_reference(
+                    replace, current_dictionary = find_reference(
                         element[list_element],
-                        previousYAML,
+                        previous_yaml,
                         snapshotted_yaml,
-                        currentDictionary,
+                        current_dictionary,
                     )
                     replace_data.append((list_element, replace))
                     # replace the reference object with the value to sub
@@ -66,13 +67,13 @@ def parse_out_references(
                 index = replacement[0] + 1
             new_data = new_data + element[index:]
 
-            currentYAML = m.set(new_data)(currentYAML)
+            current_yaml = m.set(new_data)(current_yaml)
 
             # There may be more elements in the list now
-            list_elements_after_sub = m.get()(currentYAML)
+            list_elements_after_sub = m.get()(current_yaml)
             for i in range(len(list_elements_after_sub)):
                 # focus into the list in case anything is nested inside
-                queue.append(m[list_element])
+                queue.append(m[i])
         if isinstance(element, str):
             continue
         if isinstance(element, Reference):
@@ -81,37 +82,37 @@ def parse_out_references(
             # One last case to check would be to be if a value within a dict is reference
             # then inline sub with list
 
-            replace, currentDictionary = find_reference(
-                element, previousYAML, lens.get()(currentYAML), currentDictionary
+            replace, current_dictionary = find_reference(
+                element, previous_yaml, lens.get()(current_yaml), current_dictionary
             )
             # replace the reference object with the value to sub
             # Nested 1 too far in. Want to add it to previous list
-            currentYAML = m.set(replace)(currentYAML)
-    return lens.get()(currentYAML), currentDictionary
+            current_yaml = m.set(replace)(current_yaml)
+    return lens.get()(current_yaml), current_dictionary
 
 
 def find_reference(
     reference: Reference,
-    previousYAMLs: list,
-    currentYAML: dict,
-    currentDictionary: dict,
+    previous_yamls: list,
+    current_yaml: dict,
+    current_dictionary: dict,
 ):
-    if str(reference.data) in currentDictionary:
-        return currentDictionary[str(reference.data)], currentDictionary
-    lookup = recursive_lookup(reference.data[0], currentYAML)
+    if str(reference.data) in current_dictionary:
+        return current_dictionary[str(reference.data)], current_dictionary
+    lookup = recursive_lookup(reference.data[0], current_yaml)
     if lookup:
         # Look up the key in the job found
         wanted = recursive_lookup(reference.data[1], lookup)
-        currentDictionary[str(reference.data)] = wanted
-        return wanted, currentDictionary
-    else:
-        for previousYaml in previousYAMLs:
-            lookup = recursive_lookup(reference.data[0], previousYaml)
-            if lookup:
-                # Look up the key in the job found
-                wanted = recursive_lookup(reference.data[1], lookup)
-                currentDictionary[str(reference.data)] = wanted
-                return wanted, currentDictionary
+        current_dictionary[str(reference.data)] = wanted
+        return wanted, current_dictionary
+
+    for previous_yaml in previous_yamls:
+        lookup = recursive_lookup(reference.data[0], previous_yaml)
+        if lookup:
+            # Look up the key in the job found
+            wanted = recursive_lookup(reference.data[1], lookup)
+            current_dictionary[str(reference.data)] = wanted
+            return wanted, current_dictionary
     return None
 
 
@@ -133,11 +134,11 @@ def check_if_importable(file_path_str: str) -> bool:
     return True
 
 
-def ImportFromRootFile(root_file: str) -> (list, bool):
+def import_from_root_file(root_file: str) -> (list, bool):
     filesToImport = []
     import_queue = [root_file]
     ci_yaml = []
-    referenceDict = {}
+    reference_dict = {}
     ok = True
     while len(import_queue) > 0:
         yaml_to_import = {}
@@ -152,14 +153,14 @@ def ImportFromRootFile(root_file: str) -> (list, bool):
             print(ex)
             ok = False
 
-        yaml_to_import, referenceDict = parse_out_references(
-            [x[0] for x in ci_yaml], yaml_to_import, referenceDict
+        yaml_to_import, reference_dict = parse_out_references(
+            [x[0] for x in ci_yaml], yaml_to_import, reference_dict
         )
 
         ci_yaml.append((yaml_to_import, filename_to_import))
         current_import_path = str(os.path.dirname(filename_to_import))
 
-        new_imports = ImportFromYAML(yaml_to_import)
+        new_imports = import_from_yaml(yaml_to_import)
         for importing in new_imports:
             if os.path.exists(importing):
                 import_queue.append(importing)
@@ -171,7 +172,7 @@ def ImportFromRootFile(root_file: str) -> (list, bool):
     return ci_yaml, ok
 
 
-def ImportFromYAML(yaml_data: dict) -> list:
+def import_from_yaml(yaml_data: dict) -> list:
     to_import = []
     if "include" in yaml_data:
         if isinstance(yaml_data["include"], list):
@@ -255,7 +256,7 @@ def parse_import_element(existing_imports: list, element) -> list:
                                         passed_rules = False
                                     elif not isinstance(element2, str):
                                         print("Haven't seen this happen. code: 1838")
-                                        exit(1)
+                                        sys.exit(1)
             if not passed_rules:
                 return existing_imports
         if "local" in element and check_if_importable(element["local"]):

@@ -3,6 +3,7 @@ GitPython
 lenses
 pre-commit
 pytest
+pylint
 pytest-cov
 python-gitlab
 PyYAML

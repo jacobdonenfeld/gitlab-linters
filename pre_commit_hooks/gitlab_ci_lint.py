@@ -9,7 +9,7 @@ from pathlib import Path
 import gitlab
 from git import Repo
 
-from .shared.importer import ImportFromRootFile
+from .shared.importer import import_from_root_file
 
 # Can move this to an arg
 DEBUG = False
@@ -122,8 +122,8 @@ def call_ci_check(args=None):
     # 	# if not ci_changed:
     # 	# 	return True
 
-    CI_YAML, ok = ImportFromRootFile(file)
-    if not ok:
+    CI_YAML, returned_successfully = import_from_root_file(file)
+    if not returned_successfully:
         return 1
 
     # # Merge the dictionaries
@@ -139,10 +139,10 @@ def call_ci_check(args=None):
 
     # Write the merged dictionary to a new file
 
-    # combinedYAML = json.dumps(fullYaml).replace('"', '\\"')
+    # combined_yaml = json.dumps(fullYaml).replace('"', '\\"')
     # TODO: for now, only linting the first yaml document
-    combinedYAML = json.dumps(CI_YAML[0]).replace('"', '\\"')
-    # print(combinedYAML)
+    combined_yaml = json.dumps(CI_YAML[0]).replace('"', '\\"')
+    # print(combined_yaml)
 
     # url = "https://gitlab.com/api/v4/ci/lint"
     # headers = {
@@ -152,14 +152,14 @@ def call_ci_check(args=None):
     # }
 
     try:
-        lint_resp = gl_object.ci_lint.create(content={"content": combinedYAML})
+        lint_resp = gl_object.ci_lint.create(content={"content": combined_yaml})
         print(lint_resp)
         print(lint_resp.validate)
     except Exception as ex:
         print(ex)
 
     # try:
-    # 	lint_result = requests.post(url, data={"content": combinedYAML}, headers=headers)
+    # 	lint_result = requests.post(url, data={"content": combined_yaml}, headers=headers)
     # 	lint_result.raise_for_status()
     # except requests.exceptions.HTTPError as err:
     # 	raise SystemExit(err)
