@@ -1,13 +1,13 @@
-name-template: 'v$RESOLVED_VERSION 🌈'
+name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 change-template: '- #$NUMBER $TITLE @$AUTHOR'
 sort-direction: ascending
 categories:
-
   - title: '🚀 Features'
     labels:
       - 'feature'
       - 'enhancement'
+      - 'feat'
 
   - title: '🐛 Bug Fixes'
     labels:
@@ -34,12 +34,23 @@ template: |
 
   $CHANGES
 
-  ## ⭐️ Thank you so much for helping out!
+  ## ⭐️ Thank you for helping out!
   $CONTRIBUTORS
 autolabeler:
   - label: 'bug'
+    title:
+      - '/bug/i'
+      - '/fix/i'
     branch:
       - '/fix\/.+/'
   - label: 'enhancement'
     branch:
       - '/feature\/.+/'
+    title:
+      - '/feat/i'
+      - '/feature/i'
+  - label: 'patch'
+    branch:
+      - '/patch\/.+/'
+    title:
+      - '/patch/i'
