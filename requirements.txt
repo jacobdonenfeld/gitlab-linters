@@ -1,3 +1,4 @@
+GitPython==3.1.29
 lenses~=1.1.0
 pytest==7.2.0
 python-gitlab==3.11.0
