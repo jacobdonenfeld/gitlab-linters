@@ -1,5 +1,6 @@
 [MAIN]
 suggestion-mode=yes
+load-plugins=pylint.extensions.docparams,pylint.extensions.docstyle,pylint.extensions.broad_try_clause,pylint.extensions.code_style
 
 [MESSAGES CONTROL]
 disable = duplicate-code, import-error, missing-docstring, multiple-imports, trailing-newlines
