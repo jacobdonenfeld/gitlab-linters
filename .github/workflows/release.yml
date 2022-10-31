@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release_zip_file:
+    name: Prepare release asset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: "Set manifest version number"
+        run: |
+          python3 ${{ github.workspace }}/.github/scripts/update_manifest.py
+      - name: Create zip
+        run: |
+          zip gitlab-hooks.zip -r ./
+      - name: Upload zip to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./gitlab-hooks.zip
+          asset_name: gitlab-hooks.zip
+          tag: ${{ github.ref }}
+          overwrite: true
