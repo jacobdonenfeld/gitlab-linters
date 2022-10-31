@@ -10,6 +10,7 @@ from pre_commit_hooks import gitlab_script_check
 
 @pytest.fixture(autouse=True)
 def run_around_tests():
+    """Start each test from git repo root directory"""
     git_root = Repo(".", search_parent_directories=True).working_tree_dir
     # set working directory to base of git repo
     os.chdir(str(git_root))

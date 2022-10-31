@@ -1,3 +1,4 @@
+"""Run gitlab's lint api on yaml files"""
 from __future__ import annotations
 
 import argparse

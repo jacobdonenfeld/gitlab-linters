@@ -1,3 +1,4 @@
+"""Helper file to import gitlab yaml files"""
 from __future__ import annotations
 import os
 import sys
@@ -21,6 +22,7 @@ class Dumper(yaml.SafeDumper):
 
 
 def recursive_lookup(lookup_key, dictionary):
+    """Walk the dictionary and find a nested key"""
     if lookup_key in dictionary:
         return dictionary[lookup_key]
     for v in dictionary.values():
@@ -33,12 +35,15 @@ def recursive_lookup(lookup_key, dictionary):
 
 @dataclass
 class Reference:
+    """Sets !reference instances in yaml files to this object when parsed"""
+
     data: list
 
 
 def parse_out_references(
     previous_yaml: list, current_yaml: dict, current_dictionary: dict
 ):
+    """Replace reference objects in a provided dictionary with the code they reference"""
     queue = [lens]  # Initialize a queue, this will be the path through the dict
     while len(queue) > 0:  # Creating loop to visit each node
         m = queue.pop(0)  # lens element
@@ -99,6 +104,7 @@ def find_reference(
     current_yaml: dict,
     current_dictionary: dict,
 ):
+    """Find the code the !reference object refers to"""
     if str(reference.data) in current_dictionary:
         return current_dictionary[str(reference.data)], current_dictionary
     lookup = recursive_lookup(reference.data[0], current_yaml)
@@ -119,6 +125,7 @@ def find_reference(
 
 
 def constructor_reference(loader, node) -> Reference:
+    """Extends the yaml constructor to parse !reference tags into a reference object"""
     return Reference(loader.construct_sequence(node))
 
 
@@ -126,6 +133,7 @@ Loader.add_constructor("!reference", constructor_reference)
 
 
 def check_if_importable(file_path_str: str) -> bool:
+    """Check if the file path exists and is of type yaml"""
     if "http" in file_path_str:
         return False
     if file_path_str[-5:] != ".yaml" and file_path_str[-4:] != ".yml":
@@ -137,6 +145,7 @@ def check_if_importable(file_path_str: str) -> bool:
 
 
 def import_from_root_file(root_file: str) -> (list, bool):
+    """Entry point to import all yaml files starting with the root file."""
     files_to_import = []
     import_queue = [root_file]
     ci_yaml = []
@@ -175,6 +184,7 @@ def import_from_root_file(root_file: str) -> (list, bool):
 
 
 def import_from_yaml(yaml_data: dict) -> list:
+    """Grabs the references to other files via import tags in a yaml dict."""
     to_import = []
     if "include" in yaml_data:
         if isinstance(yaml_data["include"], list):
@@ -190,27 +200,8 @@ def import_from_yaml(yaml_data: dict) -> list:
     return to_import
 
 
-#
-# def parseReferences(previousYAML, currentYAML):
-#
-#
-# def findReference(YAMLList, currentYAML, job, element):
-#     for YAMLFile in YAMLList:
-#         for key, value in YAMLFile.items():
-#
-#         for
-#
-# def recursive_lookup(k, d):
-#     if k in d: return d[k]
-#     for v in d.values():
-#         if isinstance(v, dict):
-#             a = recursive_lookup(k, v)
-#             if a is not None: return a
-#     return None
-#
-
-
 def parse_import_element(existing_imports: list, element) -> list:
+    """Helper function to only parse valid import definitions"""
     if isinstance(element, str) and check_if_importable(element):
         existing_imports.append(element)
     elif isinstance(element, list):
@@ -243,7 +234,8 @@ def parse_import_element(existing_imports: list, element) -> list:
                             continue
                         # Unsure whether to check this at compile time.
                         if rule_type == "exists":
-                            # If checking if a str exists and it does not, pass on the associated import
+                            # If checking if a str exists and it does not,
+                            # pass on the associated import
                             if isinstance(condition, str) and not check_if_importable(
                                 condition
                             ):
@@ -268,6 +260,7 @@ def parse_import_element(existing_imports: list, element) -> list:
 
 
 def find_root_ci_file(root_file_name: str):
+    """Finds the root CI file by looking at the base git repo path."""
     # If root file is not specified, look for default location
     # Get git root directory
     git_root = Repo(".", search_parent_directories=True).working_tree_dir

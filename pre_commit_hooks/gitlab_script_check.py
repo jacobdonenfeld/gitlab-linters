@@ -1,3 +1,4 @@
+"""Run shellcheck on script elements"""
 from __future__ import annotations
 
 import argparse
@@ -180,7 +181,6 @@ def call_ci_script_check(args=None):
         for key, value in yaml_dict.items():
             # key is the potential job name
             if isinstance(value, dict):
-                # TODO: compile to bash and run shellcheck
                 valid_script_keys = ["before_script", "script", "after_script"]
                 for valid_script_key in valid_script_keys:
                     if valid_script_key in value:
