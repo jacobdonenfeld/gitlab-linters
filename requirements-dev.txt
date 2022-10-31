@@ -2,8 +2,8 @@ covdefaults
 GitPython
 lenses
 pre-commit
+pylint==2.15.5
 pytest
-pylint
 pytest-cov
 python-gitlab
 PyYAML

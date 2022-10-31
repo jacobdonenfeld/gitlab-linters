@@ -1,3 +1,0 @@
-[console_scripts]
-gitlab-ci-linter = pre_commit_hooks.gitlab_ci_lint:main
-gitlab-ci-shellcheck = pre_commit_hooks.gitlab_script_check:main

@@ -1,8 +1,10 @@
 from __future__ import annotations
-
 import os
 import sys
+from pathlib import Path
 from dataclasses import dataclass
+from git import Repo
+
 
 import yaml
 
@@ -135,7 +137,7 @@ def check_if_importable(file_path_str: str) -> bool:
 
 
 def import_from_root_file(root_file: str) -> (list, bool):
-    filesToImport = []
+    files_to_import = []
     import_queue = [root_file]
     ci_yaml = []
     reference_dict = {}
@@ -149,7 +151,7 @@ def import_from_root_file(root_file: str) -> (list, bool):
                 yaml_to_import = yaml.load(stream, Loader=Loader)
                 stream.close()
         except Exception as ex:
-            print(f"Error: could not import file {filesToImport}")
+            print(f"Error: could not import file {files_to_import}")
             print(ex)
             ok = False
 
@@ -230,7 +232,7 @@ def parse_import_element(existing_imports: list, element) -> list:
             # If the rules isn't a list, I haven't seen this before, so throw an error and lmk
             if not isinstance(element["rules"], list):
                 print("unhandeled. code: 10299")
-                exit(1)
+                sys.exit(1)
             passed_rules = True
             for rule in element["rules"]:
                 if isinstance(rule, dict):
@@ -263,3 +265,37 @@ def parse_import_element(existing_imports: list, element) -> list:
             existing_imports.append(element["local"])
 
     return existing_imports
+
+
+def find_root_ci_file(root_file_name: str):
+    # If root file is not specified, look for default location
+    # Get git root directory
+    git_root = Repo(".", search_parent_directories=True).working_tree_dir
+    # Store cwd to return after execution
+    stored_cwd = os.getcwd()
+    # set working directory to base of git repo
+    os.chdir(str(git_root))
+
+    file = str(Path(root_file_name))
+
+    # Path to root file
+    base_path = os.path.dirname(file)
+    if base_path and len(base_path) > 1:
+        # If specified file doesn't exist in git root:
+        os.chdir(str(base_path))
+
+    # Filename of root file without directories
+    file = os.path.basename(file)
+
+    # # Currently only check if .gitlab-ci.yml has changed
+    # 	# cmd = "git diff-index --name-only --diff-filter M HEAD | grep '^.gitlab-ci.yml$'"
+    # 	# ci_changed = os.system(cmd) == 0
+    # 	# if not ci_changed:
+    # 	# 	return True
+
+    # Initial logic checks:
+    if not os.path.exists(file):
+        print(f"Root CI file {file} does not exist")
+        print(f"debug: cwd is {str(os.getcwd())}")
+        sys.exit(1)
+    return file, stored_cwd

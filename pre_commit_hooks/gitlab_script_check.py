@@ -5,27 +5,15 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
-from git import Repo
-
-from .shared.importer import import_from_root_file
+from .shared.importer import import_from_root_file, find_root_ci_file
+from .shared.debug_mode import set_debug
 
 # Can move this to an arg
 DEBUG = False
 
 if DEBUG:
-    import logging
-    import http.client as http_client
-
-    http_client.HTTPConnection.debuglevel = 1
-
-    # You must initialize logging, otherwise you'll not see debug output.
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-    requests_log = logging.getLogger("requests.packages.urllib3")
-    requests_log.setLevel(logging.DEBUG)
-    requests_log.propagate = True
+    set_debug()
 
 
 def check_shellcheck_install():
@@ -91,35 +79,7 @@ def call_ci_script_check(args=None):
     if args is None or "root-file" not in args:
         args = {"root-file": ".gitlab-ci.yml"}
 
-    # Get git root directory
-    git_root = Repo(".", search_parent_directories=True).working_tree_dir
-    # Store cwd to return after execution
-    stored_cwd = os.getcwd()
-    # set working directory to base of git repo
-    os.chdir(str(git_root))
-
-    file = str(Path(args["root-file"]))
-
-    # Path to root file
-    base_path = os.path.dirname(file)
-    if base_path and len(base_path) > 1:
-        # If specified file doesn't exist in git root:
-        os.chdir(str(base_path))
-
-    # Filename of root file without directories
-    file = os.path.basename(file)
-
-    # # Currently only check if .gitlab-ci.yml has changed
-    # 	# cmd = "git diff-index --name-only --diff-filter M HEAD | grep '^.gitlab-ci.yml$'"
-    # 	# ci_changed = os.system(cmd) == 0
-    # 	# if not ci_changed:
-    # 	# 	return True
-
-    # Initial logic checks:
-    if not os.path.exists(file):
-        print(f"Root CI file {file} does not exist")
-        print(f"debug: cwd is {str(os.getcwd())}")
-        return 1
+    root_file, stored_init_working_directory = find_root_ci_file(args["root-file"])
 
     def validate_script(script_element, job_name: str, file_name: str) -> bool:
         """Validate a script element via shellcheck
@@ -201,7 +161,7 @@ def call_ci_script_check(args=None):
             print("\n")
         return script_valid
 
-    ci_yaml, completed_successfully = import_from_root_file(file)
+    ci_yaml, completed_successfully = import_from_root_file(root_file)
     if not completed_successfully:
         fail = True
 
@@ -230,7 +190,7 @@ def call_ci_script_check(args=None):
                         if not valid:
                             fail = True
     # If we changed cwd, return it back
-    os.chdir(stored_cwd)
+    os.chdir(stored_init_working_directory)
 
     # Exit codes
     if fail:

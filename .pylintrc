@@ -1,3 +1,6 @@
+[MAIN]
+suggestion-mode=yes
+
 [MESSAGES CONTROL]
 disable = duplicate-code, import-error, missing-docstring, multiple-imports, trailing-newlines
 

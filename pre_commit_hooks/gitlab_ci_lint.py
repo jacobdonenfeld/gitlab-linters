@@ -4,28 +4,17 @@ import argparse
 import json
 import os
 import sys
-from pathlib import Path
 
 import gitlab
-from git import Repo
 
-from .shared.importer import import_from_root_file
+from .shared.importer import import_from_root_file, find_root_ci_file
+from .shared.debug_mode import set_debug
 
 # Can move this to an arg
 DEBUG = False
 
 if DEBUG:
-    import logging
-    import http.client as http_client
-
-    http_client.HTTPConnection.debuglevel = 1
-
-    # You must initialize logging, otherwise you'll not see debug output.
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-    requests_log = logging.getLogger("requests.packages.urllib3")
-    requests_log.setLevel(logging.DEBUG)
-    requests_log.propagate = True
+    set_debug()
 
 
 def build_parser():
@@ -80,34 +69,10 @@ def call_ci_check(args=None):
     if args is None or "root-file" not in args:
         args = {"root-file": ".gitlab-ci.yml"}
 
-    # Get git root directory
-    git_root = Repo(".", search_parent_directories=True).working_tree_dir
-    # Store cwd to return after execution
-    stored_cwd = os.getcwd()
-    # set working directory to base of git repo
-    os.chdir(str(git_root))
+    root_file_name = args["root-file"]
 
-    file = str(Path(args["root-file"]))
+    root_file, stored_init_working_directory = find_root_ci_file(root_file_name)
 
-    # Path to root file
-    base_path = os.path.dirname(file)
-    if base_path and len(base_path) > 1:
-        # If specified file doesn't exist in git root:
-        os.chdir(str(base_path))
-
-    # Filename of root file without directories
-    file = os.path.basename(file)
-
-    # # Currently only check if .gitlab-ci.yml has changed
-    # 	# cmd = "git diff-index --name-only --diff-filter M HEAD | grep '^.gitlab-ci.yml$'"
-    # 	# ci_changed = os.system(cmd) == 0
-    # 	# if not ci_changed:
-    # 	# 	return True
-
-    # Initial logic checks:
-    if not os.path.exists(file):
-        print("Root CI file does not exist")
-        return 1
     gl_token = os.getenv("GITLAB_TOKEN")
     gl_object = gitlab.Gitlab(private_token=os.environ["GITLAB_TOKEN"], api_version="4")
 
@@ -122,7 +87,7 @@ def call_ci_check(args=None):
     # 	# if not ci_changed:
     # 	# 	return True
 
-    CI_YAML, returned_successfully = import_from_root_file(file)
+    ci_yaml, returned_successfully = import_from_root_file(root_file)
     if not returned_successfully:
         return 1
 
@@ -141,7 +106,7 @@ def call_ci_check(args=None):
 
     # combined_yaml = json.dumps(fullYaml).replace('"', '\\"')
     # TODO: for now, only linting the first yaml document
-    combined_yaml = json.dumps(CI_YAML[0]).replace('"', '\\"')
+    combined_yaml = json.dumps(ci_yaml[0]).replace('"', '\\"')
     # print(combined_yaml)
 
     # url = "https://gitlab.com/api/v4/ci/lint"
@@ -174,7 +139,7 @@ def call_ci_check(args=None):
     # if not lint_result.status == "valid":
     # 	return 1
 
-    os.chdir(stored_cwd)
+    os.chdir(stored_init_working_directory)
     return 0
 
 
