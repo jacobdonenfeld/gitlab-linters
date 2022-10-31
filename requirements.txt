@@ -1,7 +1,7 @@
+GitPython==3.1.29
 lenses~=1.1.0
 pytest==7.2.0
 python-gitlab==3.11.0
-GitPython==3.1.29
 PyYAML~=6.0
 requests~=2.28.1
 setuptools==65.5.0
