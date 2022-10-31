@@ -16,7 +16,7 @@ categories:
       - 'bug'
 
   - title: '🧰 Maintenance'
-    label: 'chore'
+    label: 'patch'
 
 version-resolver:
   major:
@@ -43,6 +43,7 @@ autolabeler:
       - '/fix/i'
     branch:
       - '/fix\/.+/'
+      - '/bug\/.+/'
   - label: 'enhancement'
     branch:
       - '/feature\/.+/'
@@ -52,5 +53,7 @@ autolabeler:
   - label: 'patch'
     branch:
       - '/patch\/.+/'
+      - '/refactor\/.+/'
     title:
       - '/patch/i'
+      - '/refactor/i'

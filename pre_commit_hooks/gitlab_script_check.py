@@ -70,6 +70,7 @@ def main(argv=None):  # pylint: disable=inconsistent-return-statements
 
 def call_ci_script_check(args=None):
     """
+
     Heft of the file. Takes in arguments, returns whether it has an error or not in the scripts.
     """
     fail = False

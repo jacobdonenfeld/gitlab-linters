@@ -20,6 +20,7 @@ from pre_commit_hooks.gitlab_ci_lint import call_ci_check
 )
 def test_yml_files(test_file_path, expected):
     """
+
     Test sending yml files to gitlab ci lint api
     """
     assert (
