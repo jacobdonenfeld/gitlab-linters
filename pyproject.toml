@@ -21,7 +21,7 @@ build-backend = "setuptools.build_meta"
 #dynamic = ["version"]
 #
 #[project.urls]
-#"Homepage" = "https://github.com/jacobdonenfeld/gitlab-lint-hooks"
+#"Homepage" = "https://github.com/jacobdonenfeld/gitlab-linters"
 
 [tool.black]
 py36 = false

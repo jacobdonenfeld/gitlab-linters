@@ -2,7 +2,7 @@ Metadata-Version: 2.1
 Name: gitlab-precommit
 Version: 0.0.1
 Summary: Pre-commit hooks to validate gitlab CI configuration.
-Home-page: https://github.com/jacobdonenfeld/gitlab-lint-hooks
+Home-page: https://github.com/jacobdonenfeld/gitlab-linters
 Author: Jacob Donenfeld
 Author-email: jedonenfeld@gmail.com
 License: MIT
