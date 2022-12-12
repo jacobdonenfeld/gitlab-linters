@@ -25,9 +25,9 @@ def recursive_lookup(lookup_key, dictionary):
     """Walk the dictionary and find a nested key"""
     if lookup_key in dictionary:
         return dictionary[lookup_key]
-    for v in dictionary.values():
-        if isinstance(v, dict):
-            recurse = recursive_lookup(lookup_key, v)
+    for vv in dictionary.values():
+        if isinstance(vv, dict):
+            recurse = recursive_lookup(lookup_key, vv)
             if recurse is not None:
                 return recurse
     return None
