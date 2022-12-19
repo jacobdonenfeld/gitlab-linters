@@ -1,5 +1,6 @@
 covdefaults
 pre-commit
 pylint==2.15.5
+pylint
 pytest
 pytest-cov
