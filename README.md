@@ -10,7 +10,7 @@
 ## Install
 **Option 1:** Build and download from repository:
 ```
-pip install git+https://github.com/jacobdonenfeld/gitlab-linters#0.0.1
+pip install git+https://github.com/jacobdonenfeld/gitlab-linters#v0.1.3
 ```
 **Option 2:** (In progress)
 
