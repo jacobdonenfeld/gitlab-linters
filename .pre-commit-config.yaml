@@ -26,24 +26,27 @@ repos:
       rev: 6.0.0
       hooks:
       -     id: flake8
-  -   repo: local
-      hooks:
-        -   id: pylint
-            name: pylint
-            entry: pylint
-            require_serial: true
-            language: system
-            types: [ python ]
-            args:
-              [
-                "-rn", # Only display messages
-                "-sn", # Don't display the score
-                "--rcfile=.pylintrc", # Link to your config file
-                "--exit-zero"
-              ]
-        -   id: py.test
-            name: py.test
-            language: system
-            entry: sh -c py.test --cov
-            pass_filenames: false
-            always_run: true
+#  -   repo: local
+#      hooks:
+#        -   id: pylint
+#            stages: [commit]
+#            name: pylint
+#            entry: pylint
+#            require_serial: true
+#            language: system
+#            types: [ python ]
+#            args:
+#              [
+#                "-rn", # Only display messages
+#                "-sn", # Don't display the score
+#                "--rcfile=.pylintrc", # Link to your config file
+#                "--exit-zero"
+#              ]
+#        -   id: py.test
+#            stages: [ commit ]
+#            name: py.test
+#            additional_dependencies: ['pytest']
+#            language: python
+#            entry: py.test
+#            pass_filenames: false
+#            always_run: true
