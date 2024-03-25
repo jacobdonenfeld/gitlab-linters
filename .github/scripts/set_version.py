@@ -1,4 +1,5 @@
 """Update the version file."""
+
 import os
 import sys
 
