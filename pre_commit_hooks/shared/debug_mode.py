@@ -1,4 +1,5 @@
 """Enable debugging mode for tracing http requests"""
+
 from __future__ import annotations
 import logging
 import http.client as http_client
