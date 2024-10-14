@@ -1,4 +1,5 @@
 """Helper file to import gitlab yaml files"""
+
 from __future__ import annotations
 import os
 import sys
